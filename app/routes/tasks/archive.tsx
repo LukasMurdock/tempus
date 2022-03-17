@@ -4,7 +4,7 @@ import { db } from '~/utils/db.server';
 import Container from '~/components/Container';
 import { Task } from '@prisma/client';
 import { CheckIcon, PlusIcon, TrashIcon } from '@heroicons/react/solid';
-import { getArchivedTasks } from '~/utils/db.tasks';
+import { getArchivedTasks } from '~/utils/db.tasks.server';
 
 type LoaderData = { tasks: Array<Task> };
 export const loader: LoaderFunction = async () => {
@@ -44,7 +44,7 @@ export const action: ActionFunction = async ({ request }) => {
                 id: String(values.id),
             },
             data: {
-                completed: Number(values.completed) === 1 ? 0 : 1,
+                completed: true,
             },
         });
         // await db.task.delete({ where: { id: String(values.id) } });
@@ -77,7 +77,7 @@ export default function ArchivedTasks() {
                             <input
                                 type="hidden"
                                 name="completed"
-                                value={task.completed}
+                                value={Number(task.completed)}
                             />
                             <input
                                 type="hidden"

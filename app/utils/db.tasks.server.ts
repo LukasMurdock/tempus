@@ -1,4 +1,3 @@
-import { Task } from '@prisma/client';
 import { db } from '~/utils/db.server';
 
 export async function addTask(title: string) {

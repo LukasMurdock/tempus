@@ -6,14 +6,24 @@ import {
 } from 'remix';
 import { Form, json, Link, Outlet, useLoaderData } from 'remix';
 import Container from '~/components/Container';
-import { Task } from '@prisma/client';
-import { CheckIcon, PlusIcon } from '@heroicons/react/solid';
-import { addTask, archiveTask, getActiveTasks } from '~/utils/db.tasks.server';
+import { CalendarEvent } from '@prisma/client';
+import {
+    CheckIcon,
+    PencilAltIcon,
+    PencilIcon,
+    PlusIcon,
+} from '@heroicons/react/solid';
 import { useEffect, useRef } from 'react';
+import {
+    addCalendarEvent,
+    getCalendarEvents,
+} from '~/utils/db.calendarEvent.server';
+import { parseISO } from 'date-fns';
+import Occurrence from '~/components/Occurence';
 
-type LoaderData = { tasks: Array<Task> };
+type LoaderData = { tasks: Array<CalendarEvent> };
 export const loader: LoaderFunction = async () => {
-    const data: LoaderData = await getActiveTasks();
+    const data: LoaderData = await getCalendarEvents();
     return json(data);
 };
 
@@ -27,6 +37,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     if (_action === 'create') {
         const title = form.get('title');
+        const timeForm = form.get('time');
 
         if (typeof title !== 'string') {
             throw new Error(`Form not submitted correctly.`);
@@ -35,15 +46,9 @@ export const action: ActionFunction = async ({ request }) => {
         if (title.length < 3) {
             return json({ errors: { title: 'Make an actual title' } });
         }
+        const time = new Date(String(timeForm));
 
-        return await addTask(title);
-    }
-
-    if (_action === 'close') {
-        console.log(values.completed);
-        console.log(values.completed === 'true');
-        console.log('archiving task: ' + values.id);
-        return await archiveTask(String(values.id));
+        return await addCalendarEvent({ title, time });
     }
 };
 
@@ -64,52 +69,39 @@ export default function Tasks() {
         }
     }, [isAdding]);
     // TODO: pending UI
+    const currentDate = new Date();
 
     return (
         <Container>
-            <h1 className="text-3xl font-bold">Tasks</h1>
-            {!tasks.length && 'Add your first task'}
+            <h1 className="text-3xl font-bold">Events</h1>
+            {!tasks.length && 'Add your first event'}
             <ul className="space-y-2">
-                {tasks.map((task) => (
-                    <li key={task.id} className="flex items-center">
-                        <Form method="post" className="pr-3">
-                            <input type="hidden" name="id" value={task.id} />
-                            <input
-                                type="hidden"
-                                name="completed"
-                                value={Number(task.completed)}
-                            />
-                            <input
-                                type="hidden"
-                                name="created"
-                                value={task.created.toString()}
-                            />
-                            <button
-                                type="submit"
-                                aria-label="close"
-                                name="_action"
-                                value="close"
-                                className="rounded-md border-2 border-black bg-white p-1 text-black transition-colors hover:bg-black hover:text-white"
-                            >
-                                <CheckIcon className="h-5 w-5" />
-                            </button>
-                            {/* <div className="prose">
-                                    <pre>{JSON.stringify(task, null, 2)}</pre>
-                                </div> */}
-                        </Form>
-                        {task.title}
-                    </li>
+                {tasks.map((calendarEvent) => (
+                    <Occurrence
+                        key={calendarEvent.id}
+                        event={calendarEvent}
+                        currentDate={currentDate}
+                    />
                 ))}
                 <li>
                     <Form ref={formRef} replace method="post">
-                        <div>
+                        <div className="space-y-2">
+                            <input
+                                required
+                                type="datetime-local"
+                                id="time"
+                                name="time"
+                                className="block w-full rounded-md border-2 border-black focus:border-black focus:ring-0 sm:text-sm"
+                            />
+
                             <div className="relative flex flex-grow items-stretch focus-within:z-10">
                                 <label htmlFor="title" className="sr-only">
-                                    Task:
+                                    Event:
                                 </label>
                                 <input
                                     autoFocus
                                     id="title"
+                                    placeholder="Event title"
                                     type="text"
                                     name="title"
                                     className="block w-full rounded-none rounded-l-md border-2 border-black focus:border-black focus:ring-0 sm:text-sm"

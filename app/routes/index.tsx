@@ -6,6 +6,7 @@ export default function Index() {
         <Container>
             <h1 className="text-3xl font-bold">Occurrence</h1>
             <Link to="/tasks">Tasks</Link>
+            <Link to="/calendar">Calendar</Link>
         </Container>
     );
 }
